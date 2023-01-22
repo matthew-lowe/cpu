@@ -1,37 +1,4 @@
 module Sequencer (CtlBus ctlbus, SysBus sysbus, Registers registers);
-    // Fetch:
-    // S0       PC -> MAR, PC + 1
-    // S1       MAR -> CTLBUS, READ ROM
-    // S2       SYSBUS -> MDR, MDR -> IR
-    // Execute:
-    //          ALU Op:
-    // S3            OP0 -> ACC
-    // S4            OP1 -(op)> ACC (with operation applied)
-    //          Branch Op:
-    // S5            PC = OP0
-    //          Conditional Branch Op:
-    //               BEQ:
-    // S6                OP0 -(^)> ACC
-    // S7                OP1 -> PC IF ACC == '0
-    //               BNE:
-    // S8                OP0 -(^)> ACC
-    // S9                OP1 -> PC IF ACC != '0
-    //               BGT and BLT:
-    //                   (unconditional for now
-    //          Load Op:
-    //               RAM:
-    // S10               OP0 -> MAR, MAR -> CTLBUS
-    // S11               READ RAM, SYSBUS -> MDR
-    // S12               MDR -> OP1
-    //               ROM:
-    // S10               OP0 -> MAR, MAR -> CTLBUS
-    // S13               READ ROM, SYSBUS -> MDR
-    // S12               MDR -> OP1
-    //           Store Op:
-    //               RAM:
-    // S14               OP0 -> MAR, OP1 -> MDR, MAR -> CTLBUS, MDR -> SYSBUS
-    // S15               WRITE RAM
-
     `include "control_sig.h"
     `include "opcodes.h"
 
@@ -56,19 +23,22 @@ module Sequencer (CtlBus ctlbus, SysBus sysbus, Registers registers);
     endfunction : addr
 
     always_ff @(posedge ctlbus.clock, negedge ctlbus.n_reset) begin
-        ctlbus.dev = 2'b00;
-        ctlbus.opaddr = 4'b0000; // TODO: MAR as default address bus contents
-        ctlbus.ldstr = 0;
-
         if (!ctlbus.n_reset)
             state <= S0;
         else
             state <= n_state;
     end
 
-    always_comb unique case(state)
+    always_comb begin
+        ctlbus.dev = 2'b00;
+        ctlbus.opaddr = 4'b0000; // TODO: MAR as default address bus contents
+        ctlbus.ldstr = 0;
+        sysbus.data = 'z;
+        unique case(state)
         // FETCH
         S0: begin
+            ctlbus.dev =
+
             registers.MAR = registers.PC;
             registers.PC += 1;
             n_state = S1;
@@ -99,6 +69,7 @@ module Sequencer (CtlBus ctlbus, SysBus sysbus, Registers registers);
             endcase
         end
         // EXECUTE
+        // ALU Operations
         S3: begin
             registers.ACC = op0(registers.IR);
             n_state = S4;
@@ -114,13 +85,14 @@ module Sequencer (CtlBus ctlbus, SysBus sysbus, Registers registers);
             op1(registers.IR) = registers.ACC;
             n_state = S0;
         end
+        // Unconditional Branch
         S6: begin
             registers.PC = op0(registers.IR) - 1;
             n_state = S0;
         end
+        // Branch equal
         S7: begin
             sysbus.data = op0(registers.IR);
-            ctlbus.dev = `ALU;
             ctlbus.opaddr = `EOR;
             ctlbus.ldstr = `LDR;
             n_state = S8;
@@ -130,6 +102,7 @@ module Sequencer (CtlBus ctlbus, SysBus sysbus, Registers registers);
                 registers.PC = op0(registers.IR) - 1;
             n_state = S0;
         end
+        // Branch not equal
         S9: begin
             sysbus.data = op0(registers.IR);
             ctlbus.dev = `ALU;
@@ -142,11 +115,54 @@ module Sequencer (CtlBus ctlbus, SysBus sysbus, Registers registers);
                 registers.PC = op0(registers.IR) - 1;
             n_state = S0;
         end
+        // Load op
         S11: begin
-
+            registers.MAR = op0(registers.IR);
+            ctlbus.opaddr = registers.MAR;
+            if (addr(`DIR))
+                n_state = S12;
+            else if(addr(`ROM))
+                n_state = S14;
+        end
+        // RAM Load
+        S12: begin
+            ctlbus.dev = `RAM;
+            ctlbus.opaddr = op0(registers.IR);
+            ctlbus.ldstr = 0;
+            registers.MDR = sysbus.data;
+            n_state = S14;
+        end
+        // ROM Load
+        S13: begin
+            ctlbus.dev = `Rom;
+            ctlbus.opaddr = op0(registers.IR);
+            registers.MDR = sysbus.data;
+            n_state = S14;
+        end
+        // Load MDR into register
+        S14: begin
+            registers.R[op1(registers.IR)] = registers.MDR;
+            n_state = S0;
+        end
+        // Store
+        S15: begin
+            registers.MDR = op0(registers.IR);
+            registers.MAR = op1(registers.IR);
+            ctlbus.dev = `RAM;
+            ctlbus.opaddr = registers.MAR;
+            sysbus.data = registers.MDR;
+            n_state = S16;
+        end
+        S16: begin
+            ctlbus.dev = `RAM;
+            ctlbus.opaddr = registers.MAR;
+            sysbus.data = registers.MDR;
+            ctlbus.ldstr = `STR;
+            n_state = S0;
         end
 
         default: n_state <= S0;
     endcase
+end
 
 endmodule : Sequencer

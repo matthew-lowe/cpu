@@ -7,5 +7,7 @@ module Ram #(parameter WORD_S = 16)
         if (ctlbus.dev == `RAM)
             if (ctlbus.ldtr == `LDR) sysbus.data = mem[ctlbus.opaddr];
             else mem[ctlbus.opaddr] = sysbus.data;
+        else
+            sysbus.data = `z;
     end
 endmodule : Ram

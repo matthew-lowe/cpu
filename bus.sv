@@ -54,11 +54,11 @@ endinterface : sysbys
 //               RAM:
 // S11               OP0 -> MAR, MAR -> CTLBUS
 // S12               READ RAM, SYSBUS -> MDR
-// S13               MDR -> OP1
+// S14               MDR -> OP1
 //               ROM:
 // S11               OP0 -> MAR, MAR -> CTLBUS
-// S14               READ ROM, SYSBUS -> MDR
-// S13               MDR -> OP1
+// S13               READ ROM, SYSBUS -> MDR
+// S14               MDR -> OP1
 //           Store Op:
 //               RAM:
 // S15               OP0 -> MAR, OP1 -> MDR, MAR -> CTLBUS, MDR -> SYSBUS

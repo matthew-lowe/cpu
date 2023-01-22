@@ -17,8 +17,8 @@
 `define LSR 4'b1111
 
 // Addressing modes
-`define DIR 2'b00
-`define PCR 2'b01
+`define DIR 2'b00 // DIR is for RAM
+`define ROM 2'b01 // Read-only
 `define REG 2'b10
 `define IMM 2'b11
 
