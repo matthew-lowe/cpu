@@ -13,16 +13,7 @@
 `define MAR = 4'b1110
 `define MDR = 4'b1111
 
-// ALU Operations
-`define ADD = 4'b0000
-`define SUB = 4'b0001
-`define MOV = 4'b0010
-`define AND = 4'b0011
-`define ORR = 4'b0100
-`define EOR = 4'b0101
-`define MVN = 4'b0110
-`define LSL = 4'b0111
-`define LSR = 4'b1000
+// ALU Operations -- see opcodes.h
 
 
 // Register/RAM/ROM operation

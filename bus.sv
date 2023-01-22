@@ -28,6 +28,8 @@ interface SysBus #(parameter WORD_W = 16);
         inout data, n_reset);
 endinterface : sysbys
 
+
+
 // Fetch:
 // S0       PC -> MAR, PC + 1
 // S1       MAR -> CTLBUS, READ ROM
@@ -35,28 +37,29 @@ endinterface : sysbys
 // Execute:
 //          ALU Op:
 // S3            OP0 -> ACC
-// S4            OP1 -(op)> ACC (with operation applied)
+// S4            ALU OPERATION -> CTLBUS (with operation applied)
+// S5            ACC -> OP1
 //          Branch Op:
-// S5            PC = OP0
+// S6            OP0 -> PC
 //          Conditional Branch Op:
 //               BEQ:
-// S6                OP0 -(^)> ACC
-// S7                OP1 -> PC IF ACC == '0
+// S7                OP0 -(^)> ACC
+// S8                OP1 -> PC IF ACC == '0
 //               BNE:
-// S8                OP0 -(^)> ACC
-// S9                OP1 -> PC IF ACC != '0
+// S9                OP0 -(^)> ACC
+// S10               OP1 -> PC IF ACC != '0
 //               BGT and BLT:
 //                   (unconditional for now
 //          Load Op:
 //               RAM:
-// S10               OP0 -> MAR, MAR -> CTLBUS
-// S11               READ RAM, SYSBUS -> MDR
-// S12               MDR -> OP1
+// S11               OP0 -> MAR, MAR -> CTLBUS
+// S12               READ RAM, SYSBUS -> MDR
+// S13               MDR -> OP1
 //               ROM:
-// S10               OP0 -> MAR, MAR -> CTLBUS
-// S13               READ ROM, SYSBUS -> MDR
-// S12               MDR -> OP1
+// S11               OP0 -> MAR, MAR -> CTLBUS
+// S14               READ ROM, SYSBUS -> MDR
+// S13               MDR -> OP1
 //           Store Op:
 //               RAM:
-// S14               OP0 -> MAR, OP1 -> MDR, MAR -> CTLBUS, MDR -> SYSBUS
-// S15               WRITE RAM
+// S15               OP0 -> MAR, OP1 -> MDR, MAR -> CTLBUS, MDR -> SYSBUS
+// S16               WRITE RAM
